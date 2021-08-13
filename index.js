@@ -13,7 +13,7 @@ const db = mysql.createConnection(
     console.log(`Connected to the giants_db database.`)
 );
 
-
+starterPrompt()
 function starterPrompt() {
     inquirer.prompt([
         {
@@ -30,8 +30,8 @@ function starterPrompt() {
                 "Add Department"
             ]
         }
-    ]).then(function (choice) {
-        switch (choice.choices) {
+    ]).then(function (data) {
+        switch (data.choice) {
             case "View All Departments":
                 viewAllDepartments()
                 break;
@@ -60,6 +60,27 @@ function starterPrompt() {
 function viewAllDepartments() {
 
     db.query('SELECT * FROM department', function (err, results) {
-        console.log(results);
+        console.table(results);
+        starterPrompt();
     });
 }
+
+function viewAllRoles() {
+
+    db.query('SELECT * FROM role', function (err, results) {
+        console.table(results);
+        starterPrompt();
+    });
+}
+
+
+function viewAllEmployees() {
+
+    db.query('SELECT * FROM employee', function (err, results) {
+        console.table(results);
+        starterPrompt();
+    });
+}
+
+
+
