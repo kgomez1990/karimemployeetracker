@@ -3,6 +3,9 @@ const mysql = require('mysql2');
 
 const inquirer = require('inquirer');
 
+let newRoles = []
+let newManager = []
+var employees = []
 const db = mysql.createConnection(
     {
         host: 'localhost',
@@ -13,7 +16,6 @@ const db = mysql.createConnection(
     console.log(`Connected to the giants_db database.`)
 );
 
-starterPrompt()
 function starterPrompt() {
     inquirer.prompt([
         {
@@ -41,20 +43,39 @@ function starterPrompt() {
             case "View All Employees":
                 viewAllEmployees()
                 break;
-            case "Update":
-                updateAllEmployees()
+            case "Update Employee":
+                updateEmployees()
                 break;
             case "Add Employee":
-                viewAddEmployee()
+                AddEmployee()
                 break;
             case "Add Role":
-                viewAllRoles()
+                addRoles()
                 break;
             case "Add Department":
-                addDepartments()
+                addDepartment()
                 break;
         }
     })
+}
+
+
+function chooseRole() {
+    db.query('Select title From role', function (err, res) {
+        for (let i = 0; i < res.length; i++) {
+            newRoles.push(res[i].title)
+        }
+    })
+    return newRoles
+}
+
+function chooseManager() {
+    db.query('Select first_name, last_name From employee where manager_id is NULL', function (err, res) {
+        for (let i = 0; i < res.length; i++) {
+            newManager.push(res[i].first_name)
+        }
+    })
+    return newManager
 }
 
 function viewAllDepartments() {
@@ -83,4 +104,126 @@ function viewAllEmployees() {
 }
 
 
+function addDepartment() {
 
+    inquirer
+        .prompt([
+            {
+                name: 'department',
+                type: 'input',
+                message: 'Please enter new Department name: ',
+            },
+        ])
+        .then(function (data) {
+            db.query('insert INTO department SET ?', {
+                name: data.department,
+            }, function (err) {
+                console.table(data)
+                starterPrompt();
+            })
+        }
+        )
+}
+
+
+function addRoles() {
+    inquirer
+        .prompt([
+            {
+                name: 'selectedTitle',
+                type: 'input',
+                message: "Please enter the role you'll like to add: "
+            },
+            {
+                name: 'selectedSalary',
+                type: 'input',
+                message: "What is the Salary of this role?: "
+            },
+        ])
+        .then(function (data) {
+            db.query('insert role INTO SET ?', {
+                title: data.selectedTitle,
+                salary: data.selectedSalary
+            }, function (err) {
+                console.table(data)
+                starterPrompt();
+            })
+        }
+        )
+}
+
+function AddEmployee() {
+    inquirer
+        .prompt([
+            {
+                name: 'first_name',
+                type: 'input',
+                message: 'New Employee first name: ',
+            },
+            {
+                name: 'last_name',
+                type: 'input',
+                message: 'New Employee Last Name: ',
+                choices: chooseRole()
+            },
+            {
+                name: 'contact',
+                type: 'list',
+                message: 'Who is the manager?',
+                choices: chooseManager()
+            },
+        ])
+        .then(function (data) {
+            var roleId = chooseRole().indexOf(data.role) + 1
+            var managerId = chooseManager().indexOf(data.choice) + 1
+
+            db.query('Insert into employee ?', {
+                first_name: data.first_name,
+                last_name: data.last_name,
+                manager_Id: managerId,
+                role_id: roleId
+            }, function (err) {
+                console.table(data)
+                starterPrompt();
+            })
+        })
+}
+
+
+function updateEmployees() {
+    db.query("SELECT * from employee JOIN role on employee.role_id = role.id;", function (err, res) {
+        inquirer
+            .prompt([
+                {
+                    name: 'UpdatedId',
+                    type: 'list',
+                    message: "Please choose an employee you'd like to update",
+                    choices: function () {
+
+                        for (var i = 0; i < res.length; i++) {
+                            employees.push(res[i].last_name)
+                        }
+                        return employees;
+                    },
+                },
+                {
+                    name: 'role',
+                    type: 'list',
+                    message: 'Please choose the New Role: ',
+                    choices: chooseRole()
+                },
+            ]).then(function (data) {
+                var roleId = chooseRole().indexOf(data.role) + 1;
+                db.query('UPDATE employee SET Where ?', {
+                    id: data.UpdateId,
+                    role_id: data.roleId
+                }, function (err) {
+                    console.log(data)
+                    starterPrompt();
+                })
+            })
+
+    })
+}
+
+starterPrompt();
